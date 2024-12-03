@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Notes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Notes</h1>
+        <form id="uploadForm" action="http://localhost:3000/upload" method="POST" enctype="multipart/form-data">
+            <label for="subject_name">Subject Name:</label>
+            <input type="text" name="subject_name" id="subject_name" placeholder="Enter the subject name" required>
+
+            <label for="note">Upload File:</label>
+            <input type="file" name="note" id="note" accept=".pdf,.doc,.docx,.txt" required>
+
+            <button type="submit">Upload</button>
+        </form>
+
+        <h2>Uploaded Notes</h2>
+        <div id="notesContainer" style="overflow-y: auto; max-height: 300px;">
+            <table id="notesTable">
+                <thead>
+                    <tr>
+                        <th>Subject Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Notes will be dynamically populated here -->
+                </tbody>
+            </table>
+        </div>
+        <p id="responseMessage" style="color: green;"></p>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const notesTable = document.getElementById('notesTable').querySelector('tbody');
+        const responseMessage = document.getElementById('responseMessage');
+        const notesContainer = document.getElementById('notesContainer');
+
+        // Fetch and display notes
+        async function fetchNotes() {
+            try {
+                const response = await fetch('http://localhost:3000/notes');
+                const notes = await response.json();
+                notesTable.innerHTML = ''; // Clear existing rows
+
+                notes.forEach(note => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${note.subject_name}</td>
+                        <td>
+                            <button onclick="deleteNote(${note.notes_id})" class="delete-btn">Delete</button>
+                        </td>
+                    `;
+                    notesTable.appendChild(row);
+                });
+
+                // Scroll to the bottom of the notes container
+                notesContainer.scrollTop = notesContainer.scrollHeight;
+            } catch (error) {
+                console.error('Error fetching notes:', error);
+            }
+        }
+
+        // Delete a note
+        async function deleteNote(id) {
+            if (!confirm('Are you sure you want to delete this note?')) return;
+
+            try {
+                const response = await fetch(`http://localhost:3000/notes/${id}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    responseMessage.style.color = 'green';
+                    responseMessage.textContent = 'Note deleted successfully!';
+                    fetchNotes(); // Refresh the notes list
+                } else {
+                    const error = await response.text();
+                    responseMessage.style.color = 'red';
+                    responseMessage.textContent = `Error: ${error}`;
+                }
+            } catch (err) {
+                console.error(err);
+                responseMessage.style.color = 'red';
+                responseMessage.textContent = 'An error occurred. Please try again.';
+            }
+        }
+
+        // Handle file upload
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    responseMessage.style.color = 'green';
+                    responseMessage.textContent = 'File uploaded successfully!';
+                    form.reset();
+                    fetchNotes(); // Refresh the notes list
+                } else {
+                    const error = await response.text();
+                    responseMessage.style.color = 'red';
+                    responseMessage.textContent = `Error: ${error}`;
+                }
+            } catch (err) {
+                console.error(err);
+                responseMessage.style.color = 'red';
+                responseMessage.textContent = 'An error occurred. Please try again.';
+            }
+        });
+
+        // Fetch notes on page load
+        fetchNotes();
+    </script>
+</body>
+</html>

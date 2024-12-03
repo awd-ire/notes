@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Notes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Available Notes</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Subject Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="notesTable">
+                <!-- Rows will be dynamically populated -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const baseURL = 'http://localhost:3000';
+
+        // Fetch and display notes
+        fetch(`${baseURL}/notes`)
+            .then(response => response.json())
+            .then(data => {
+                const notesTable = document.getElementById('notesTable');
+
+                data.forEach((note, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${note.subject_name}</td>
+                        <td>
+                            <button onclick="downloadFile(${note.notes_id})">Download</button>
+                        </td>
+                    `;
+                    notesTable.appendChild(row);
+                });
+            })
+            .catch(err => {
+                console.error('Error fetching notes:', err);
+                alert('Failed to load notes. Please try again.');
+            });
+
+        // Download file function
+        function downloadFile(fileId) {
+            const url = `${baseURL}/download/${fileId}`;
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>
